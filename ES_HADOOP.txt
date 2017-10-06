@@ -34,3 +34,4 @@ green  open   radio                       5   1         10            0     21.2
 
 you can find the radio as index on your elastic. if you want to view data of your index run below command
 curl -XGET 'localhost:9200/radio/_search' d '';
+
