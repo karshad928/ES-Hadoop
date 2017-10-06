@@ -1,0 +1,36 @@
+How to use hive table as elasticsearch index?
+
+First of all we want elasticsearch-hadoop-2.3.0.jar jar in hive lib path, which we can do in 3 ways
+
+1.Add auxiliary path
+hive -hiveconf hive.aux.jars.path=/opt/cloudera/parcels/CDH-5.4.3-1.cdh5.4.3.p0.6/lib/hive/lib/elasticsearch-hadoop-2.3.0.jar 
+
+if jar added successfully then you get
+
+root@localhost:/opt/cloudera/parcels/CDH-5.4.3-1.cdh5.4.3.p0.6/lib/hadoop/lib/native> hive -hiveconf hive.aux.jars.path=/opt/cloudera/parcels/CDH-5.4.3-1.cdh5.4.3.p0.6/lib/hive/lib/elasticsearch-hadoop-2.3.0.jar
+
+Logging initialized using configuration in jar:file:/opt/cloudera/parcels/CDH-5.4.3-1.cdh5.4.3.p0.6/jars/hive-common-1.1.0-cdh5.4.3.jar!/hive-log4j.properties
+WARNING: Hive CLI is deprecated and migration to Beeline is recommended.
+hive>
+
+2.Add Jar using hive shell
+hive> ADD JAR hdfs:///data/ivaps/esjar/elasticsearch-hadoop-2.3.0.jar
+
+3.Put jar directly into below path
+/opt/cloudera/parcels/CDH-5.4.3-1.cdh5.4.3.p0.6/lib/hive/lib/
+
+after successfully adding this jar we have to do the below step, create the hive table according to your requirement with the following TBLPROPERTIES
+
+CREATE EXTERNAL TABLE artists_1 ( id BIGINT) STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler' TBLPROPERTIES('es.mapping.id' = 'id', 'es.index.auto.create'='true','es.resource'='radio/artists','es.index.read.missing.as.empty'='yes', 'es.node'='localhost');
+
+Currently table artists_1 created with empty data, now we have to insert data into it. for this you have to run the below command
+INSERT into TABLE artists_1 SELECT pin FROM ivaps_consumer_account_latest;
+
+Once this step successfully done , you can browse your table as an elasticsearch index on your ES cluster
+
+root@localhost:/opt/cloudera/parcels/CDH-5.4.3-1.cdh5.4.3.p0.6/lib/hadoop/lib/native> curl -XGET 'http://localhost:9200/_cat/indices?v'
+health status index                     pri rep docs.count docs.deleted store.size pri.store.size
+green  open   radio                       5   1         10            0     21.2kb         10.6kb
+
+you can find the radio as index on your elastic. if you want to view data of your index run below command
+curl -XGET 'localhost:9200/radio/_search' d '';
